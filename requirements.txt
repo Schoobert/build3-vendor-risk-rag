@@ -1,0 +1,8 @@
+anthropic
+openai
+langchain
+langchain-community
+pdfplumber
+python-dotenv
+chromadb
+streamlit
