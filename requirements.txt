@@ -6,3 +6,4 @@ pdfplumber
 python-dotenv
 chromadb
 streamlit
+supabase
