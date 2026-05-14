@@ -65,17 +65,27 @@ Based solely on the chunks above, provide your structured risk analysis."""
     )
 
     raw = response.content[0].text
+    print("\n── RAW API RESPONSE ─────────────────────────────────────────────\n")
+    print(raw)
+    print("─────────────────────────────────────────────────────────────────\n")
+
     parsed = {"query": query, "raw_response": raw, "chunks_used": len(results)}
 
+    LABELS = {
+        "RISK RATING:": "risk_rating",
+        "SUMMARY:": "summary",
+        "CITATIONS:": "citations",
+        "RECOMMENDED ACTION:": "recommended_action",
+    }
+
+    current_key = None
     for line in raw.splitlines():
-        if line.startswith("RISK RATING:"):
-            parsed["risk_rating"] = line.split(":", 1)[1].strip()
-        elif line.startswith("SUMMARY:"):
-            parsed["summary"] = line.split(":", 1)[1].strip()
-        elif line.startswith("CITATIONS:"):
-            parsed["citations"] = line.split(":", 1)[1].strip()
-        elif line.startswith("RECOMMENDED ACTION:"):
-            parsed["recommended_action"] = line.split(":", 1)[1].strip()
+        matched = next((k for k in LABELS if line.startswith(k)), None)
+        if matched:
+            current_key = LABELS[matched]
+            parsed[current_key] = line[len(matched):].strip()
+        elif current_key and line.strip():
+            parsed[current_key] = (parsed.get(current_key, "") + "\n" + line).strip()
 
     return parsed
 
