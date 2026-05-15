@@ -80,7 +80,8 @@ Based solely on the chunks above, provide your structured risk analysis."""
 
     current_key = None
     for line in raw.splitlines():
-        matched = next((k for k in LABELS if line.startswith(k)), None)
+        line_lower = line.lower()
+        matched = next((k for k in LABELS if line_lower.startswith(k.lower())), None)
         if matched:
             current_key = LABELS[matched]
             parsed[current_key] = line[len(matched):].strip()
