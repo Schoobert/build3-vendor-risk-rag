@@ -47,7 +47,7 @@ def _ingest_file(uploaded_file) -> int:
         _reset_collection()
         chunks = ingest_pdf(tmp_path)
         embedded = embed_chunks(chunks)
-        store_chunks(embedded, COLLECTION_NAME)
+        store_chunks(embedded, COLLECTION_NAME, source_filename=uploaded_file.name)
         return len(chunks)
     finally:
         os.unlink(tmp_path)
@@ -57,7 +57,7 @@ def _ingest_sample() -> int:
     _reset_collection()
     chunks = ingest_pdf(str(SAMPLE_PDF))
     embedded = embed_chunks(chunks)
-    store_chunks(embedded, COLLECTION_NAME)
+    store_chunks(embedded, COLLECTION_NAME, source_filename=SAMPLE_LABEL)
     return len(chunks)
 
 
