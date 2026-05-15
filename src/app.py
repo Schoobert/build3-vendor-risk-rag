@@ -156,7 +156,7 @@ SUGGESTED_QUESTIONS = [
     "What is the vendor's backup and recovery posture?",
     "How is customer data encrypted and protected?",
     "What access controls and authentication requirements are in place?",
-    "Are there any exceptions or audit findings I should be aware of?",
+    "What audit exceptions or control failures were identified in this report?",
 ]
 
 # ── Q&A panel (shown whenever a document is ready) ────────────────────────────
