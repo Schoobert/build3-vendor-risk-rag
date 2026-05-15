@@ -15,6 +15,10 @@ from vectorstore import CHROMA_DIR, store_chunks
 
 COLLECTION_NAME = "vendor_risk"
 
+SAMPLE_PDF = Path(__file__).parent.parent / "sample_data" / "NovaSoft_SOC2_TypeII_2024.pdf"
+SAMPLE_LABEL = "NovaSoft_SOC2_TypeII_2024.pdf"
+SAMPLE_DISPLAY = "NovaSoft Technologies SOC 2 Type II (2024)"
+
 RATING_COLORS = {
     "low": "green",
     "medium": "orange",
@@ -49,6 +53,14 @@ def _ingest_file(uploaded_file) -> int:
         os.unlink(tmp_path)
 
 
+def _ingest_sample() -> int:
+    _reset_collection()
+    chunks = ingest_pdf(str(SAMPLE_PDF))
+    embedded = embed_chunks(chunks)
+    store_chunks(embedded, COLLECTION_NAME)
+    return len(chunks)
+
+
 # ── Page config ──────────────────────────────────────────────────────────────
 
 st.set_page_config(page_title="Vendor Risk Assessment Tool", layout="wide")
@@ -61,6 +73,7 @@ for key, default in [
     ("chunk_count", 0),
     ("last_question", None),
     ("last_result", None),
+    ("use_sample", False),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -76,7 +89,41 @@ with st.sidebar:
 
 # ── Main area ─────────────────────────────────────────────────────────────────
 
-if uploaded_file is None:
+# Uploaded file always takes priority over sample mode
+if uploaded_file is not None:
+    st.session_state.use_sample = False
+
+if uploaded_file is not None:
+    # ── Uploaded file branch ──────────────────────────────────────────────────
+    if st.session_state.ingested_file != uploaded_file.name:
+        with st.spinner("Analyzing document..."):
+            chunk_count = _ingest_file(uploaded_file)
+        st.session_state.ingested_file = uploaded_file.name
+        st.session_state.chunk_count = chunk_count
+        st.session_state.last_question = None
+        st.session_state.last_result = None
+
+    st.success(
+        f"Ready: **{uploaded_file.name}** — {st.session_state.chunk_count} chunks indexed"
+    )
+
+elif st.session_state.use_sample:
+    # ── Sample document branch ────────────────────────────────────────────────
+    if st.session_state.ingested_file != SAMPLE_LABEL:
+        with st.spinner("Loading sample document..."):
+            chunk_count = _ingest_sample()
+        st.session_state.ingested_file = SAMPLE_LABEL
+        st.session_state.chunk_count = chunk_count
+        st.session_state.last_question = None
+        st.session_state.last_result = None
+
+    st.info(
+        f"Using sample document: **{SAMPLE_DISPLAY}** — "
+        "or upload your own PDF using the sidebar"
+    )
+
+else:
+    # ── Landing page ──────────────────────────────────────────────────────────
     st.markdown(
         """
         ### What this tool does
@@ -97,20 +144,14 @@ if uploaded_file is None:
         - Vendor privacy policies and data processing agreements
         """
     )
-else:
-    # Ingest only when a new file is uploaded
-    if st.session_state.ingested_file != uploaded_file.name:
-        with st.spinner("Analyzing document..."):
-            chunk_count = _ingest_file(uploaded_file)
-        st.session_state.ingested_file = uploaded_file.name
-        st.session_state.chunk_count = chunk_count
-        st.session_state.last_question = None
-        st.session_state.last_result = None
 
-    st.success(
-        f"Ready: **{uploaded_file.name}** — {st.session_state.chunk_count} chunks indexed"
-    )
+    if st.button("Try with sample document", type="primary"):
+        st.session_state.use_sample = True
+        st.rerun()
 
+# ── Q&A panel (shown whenever a document is ready) ────────────────────────────
+
+if st.session_state.ingested_file:
     st.markdown("### Ask a Risk Question")
 
     col_input, col_btn = st.columns([5, 1])
