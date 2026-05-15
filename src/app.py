@@ -74,6 +74,8 @@ for key, default in [
     ("last_question", None),
     ("last_result", None),
     ("use_sample", False),
+    ("pending_question", ""),
+    ("auto_run", False),
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -149,22 +151,50 @@ else:
         st.session_state.use_sample = True
         st.rerun()
 
+SUGGESTED_QUESTIONS = [
+    "What penetration test or vulnerability findings are open or overdue?",
+    "What is the vendor's backup and recovery posture?",
+    "How is customer data encrypted and protected?",
+    "What access controls and authentication requirements are in place?",
+    "Are there any exceptions or audit findings I should be aware of?",
+]
+
 # ── Q&A panel (shown whenever a document is ready) ────────────────────────────
 
 if st.session_state.ingested_file:
     st.markdown("### Ask a Risk Question")
 
+    # If a suggestion was clicked on the previous run, pre-fill the input and
+    # arm auto_run before the widget renders so the value takes effect.
+    if st.session_state.pending_question:
+        st.session_state.question_input = st.session_state.pending_question
+        st.session_state.pending_question = ""
+        st.session_state.auto_run = True
+
+    # Consume auto_run immediately so a subsequent rerun doesn't re-fire it.
+    should_auto_run = st.session_state.auto_run
+    st.session_state.auto_run = False
+
     col_input, col_btn = st.columns([5, 1])
     with col_input:
         question = st.text_input(
             "Question",
+            key="question_input",
             label_visibility="collapsed",
             placeholder="e.g. What security exceptions or audit findings were identified?",
         )
     with col_btn:
         submitted = st.button("Analyze", use_container_width=True)
 
-    if submitted and question:
+    st.caption("Suggested questions:")
+    sug_cols = st.columns(len(SUGGESTED_QUESTIONS))
+    for i, suggestion in enumerate(SUGGESTED_QUESTIONS):
+        with sug_cols[i]:
+            if st.button(suggestion, key=f"sug_{i}", use_container_width=True):
+                st.session_state.pending_question = suggestion
+                st.rerun()
+
+    if (submitted or should_auto_run) and question:
         if question != st.session_state.last_question:
             with st.spinner("Generating risk summary..."):
                 st.session_state.last_result = analyze_vendor_risk(question)
