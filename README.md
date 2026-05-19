@@ -1,6 +1,6 @@
 # Vendor Risk Assessment Tool
 
-**[Try the live demo](https://vendor-risk-rag.streamlit.app/)** · **[Loom walkthrough](#)** *(coming soon)*
+**[Try the live demo](https://vendor-risk-rag.streamlit.app/)** · **[Loom walkthrough](https://www.loom.com/share/e7f7db106fca401da0a338ff6f89857a)**
 
 ---
 
